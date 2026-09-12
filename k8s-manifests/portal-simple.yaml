@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portal-html
+  namespace: default
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>🚀 Developer Platform</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 600px; margin: 50px auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        h1 { color: #333; margin-bottom: 10px; }
+        p { color: #666; margin-bottom: 30px; }
+        form { display: flex; flex-direction: column; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-weight: 600; color: #333; }
+        input, textarea { padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 14px; font-family: inherit; }
+        input:focus, textarea:focus { outline: none; border-color: #667eea; }
+        button { padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        button:hover { background: #764ba2; }
+        .message { padding: 12px; margin-top: 20px; border-radius: 5px; background: #f0f0f0; color: #333; text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>🚀 Developer Platform</h1>
+        <p>Create a new microservice in seconds</p>
+        <form onsubmit="handleSubmit(event)">
+          <div class="form-group">
+            <label>Service Name</label>
+            <input type="text" id="serviceName" placeholder="e.g., api-service" required>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="description" placeholder="Describe what this service does" rows="4"></textarea>
+          </div>
+          <button type="submit">Create Service</button>
+        </form>
+        <div id="message"></div>
+      </div>
+      <script>
+        function handleSubmit(event) {
+          event.preventDefault();
+          const serviceName = document.getElementById('serviceName').value;
+          const description = document.getElementById('description').value;
+          const messageDiv = document.getElementById('message');
+          messageDiv.innerHTML = `✅ Service "${serviceName}" created successfully!`;
+          document.getElementById('serviceName').value = '';
+          document.getElementById('description').value = '';
+        }
+      </script>
+    </body>
+    </html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portal
+  template:
+    metadata:
+      labels:
+        app: portal
+    spec:
+      containers:
+      - name: portal
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html
+        configMap:
+          name: portal-html
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portal
+  namespace: default
+spec:
+  selector:
+    app: portal
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
